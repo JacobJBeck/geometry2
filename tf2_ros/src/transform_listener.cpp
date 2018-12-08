@@ -44,13 +44,13 @@ TransformListener::TransformListener(tf2::BufferCore& buffer, bool spin_thread):
   dedicated_listener_thread_(NULL), buffer_(buffer), using_dedicated_thread_(false)
 {
   //TODO(tfoote)make this anonymous
-  node_ = rclcpp::node::Node::make_shared("transform_listener_impl");
+  node_ = rclcpp::Node::make_shared("transform_listener_impl");
   init();
   if (spin_thread)
     initThread();
 }
 
-TransformListener::TransformListener(tf2::BufferCore& buffer, rclcpp::node::Node::SharedPtr nh, bool spin_thread)
+TransformListener::TransformListener(tf2::BufferCore& buffer, rclcpp::Node::SharedPtr nh, bool spin_thread)
 : dedicated_listener_thread_(NULL)
 , node_(nh)
 , buffer_(buffer)
@@ -93,7 +93,7 @@ void TransformListener::initThread()
   // rclcpp::spin, since there are more than one versions of it (overloaded).
   // see: http://stackoverflow.com/a/27389714/671658
   // I (wjwwood) chose to use the lamda rather than the static cast solution.
-  auto run_func = [](rclcpp::node::Node::SharedPtr node) {
+  auto run_func = [](rclcpp::Node::SharedPtr node) {
     return rclcpp::spin(node);
   };
   dedicated_listener_thread_ = new std::thread(run_func, node_);
@@ -132,7 +132,7 @@ void TransformListener::subscription_callback_impl(const tf2_msgs::msg::TFMessag
     {
       buffer_.setTransform(msg_in.transforms[i], authority, is_static);
     }
-    
+
     catch (tf2::TransformException& ex)
     {
       ///\todo Use error reporting

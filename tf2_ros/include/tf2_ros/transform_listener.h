@@ -50,9 +50,9 @@ public:
   /**@brief Constructor for transform listener */
   TF2_ROS_PUBLIC
   TransformListener(tf2::BufferCore& buffer, bool spin_thread = true);
-  
+
   TF2_ROS_PUBLIC
-  TransformListener(tf2::BufferCore& buffer, rclcpp::node::Node::SharedPtr nh, bool spin_thread = true);
+  TransformListener(tf2::BufferCore& buffer, rclcpp::Node::SharedPtr nh, bool spin_thread = true);
 
   TF2_ROS_PUBLIC
   ~TransformListener();
@@ -70,19 +70,19 @@ private:
 
   // ros::CallbackQueue tf_message_callback_queue_;
   std::thread* dedicated_listener_thread_;
-  rclcpp::node::Node::SharedPtr node_;
-  rclcpp::subscription::Subscription<tf2_msgs::msg::TFMessage>::SharedPtr message_subscription_tf_;
-  rclcpp::subscription::Subscription<tf2_msgs::msg::TFMessage>::SharedPtr message_subscription_tf_static_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Subscription<tf2_msgs::msg::TFMessage>::SharedPtr message_subscription_tf_;
+  rclcpp::Subscription<tf2_msgs::msg::TFMessage>::SharedPtr message_subscription_tf_static_;
   tf2::BufferCore& buffer_;
   bool using_dedicated_thread_;
   tf2::TimePoint last_update_;
- 
+
   void dedicatedListenerThread()
   {
     while (using_dedicated_thread_)
     {
       break;
-      //TODO(tfoote) reenable callback queue processing 
+      //TODO(tfoote) reenable callback queue processing
       //tf_message_callback_queue_.callAvailable(ros::WallDuration(0.01));
     }
   };

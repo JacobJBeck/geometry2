@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
   //TODO(tfoote) restore anonymous??
   // ros::init_options::AnonymousName);
 
-  rclcpp::node::Node::SharedPtr nh = rclcpp::node::Node::make_shared("tf2_echo");
+  rclcpp::Node::SharedPtr nh = rclcpp::Node::make_shared("tf2_echo");
 
   double rate_hz;
   if (argc == 4)
@@ -92,7 +92,7 @@ int main(int argc, char ** argv)
     // ros::NodeHandle p_nh("~");
     // p_nh.param("rate", rate_hz, 1.0);
   }
-  rclcpp::rate::Rate rate(rate_hz);
+  rclcpp::Rate rate(rate_hz);
 
   //Instantiate a local listener
   echoListener echoListener;
@@ -101,7 +101,7 @@ int main(int argc, char ** argv)
   std::string source_frameid = std::string(argv[1]);
   std::string target_frameid = std::string(argv[2]);
 
-  // Wait for up to one second for the first transforms to become avaiable. 
+  // Wait for up to one second for the first transforms to become avaiable.
   echoListener.buffer_.canTransform(source_frameid, target_frameid, tf2::TimePoint(), tf2::durationFromSec(1.0));
 
   //Nothing needs to be done except wait for a quit
@@ -123,7 +123,7 @@ int main(int argc, char ** argv)
         auto translation = echo_transform.transform.translation;
         auto rotation = echo_transform.transform.rotation;
         std::cout << "- Translation: [" << translation.x << ", " << translation.y << ", " << translation.z << "]" << std::endl;
-        std::cout << "- Rotation: in Quaternion [" << rotation.x << ", " << rotation.y << ", " 
+        std::cout << "- Rotation: in Quaternion [" << rotation.x << ", " << rotation.y << ", "
                   << rotation.z << ", " << rotation.w << "]" << std::endl;
                   //TODO(tfoote) restory rpy
                   // << "            in RPY (radian) [" <<  roll << ", " << pitch << ", " << yaw << "]" << std::endl
@@ -137,7 +137,7 @@ int main(int argc, char ** argv)
         std::cout << "Exception thrown:" << ex.what()<< std::endl;
         std::cout << "The current list of frames is:" <<std::endl;
         std::cout << echoListener.buffer_.allFramesAsString()<<std::endl;
-        
+
       }
       rate.sleep();
     }

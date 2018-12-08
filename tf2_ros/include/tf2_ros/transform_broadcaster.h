@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -41,21 +41,21 @@
 namespace tf2_ros
 {
 
-/** \brief This class provides an easy way to publish coordinate frame transform information.  
- * It will handle all the messaging and stuffing of messages.  And the function prototypes lay out all the 
+/** \brief This class provides an easy way to publish coordinate frame transform information.
+ * It will handle all the messaging and stuffing of messages.  And the function prototypes lay out all the
  * necessary data needed for each message.  */
 
 class TransformBroadcaster{
 public:
   /** \brief Constructor (needs a ros::Node reference) */
   TF2_ROS_PUBLIC
-  TransformBroadcaster(rclcpp::node::Node::SharedPtr node);
+  TransformBroadcaster(rclcpp::Node::SharedPtr node);
 
-  /** \brief Send a StampedTransform 
+  /** \brief Send a StampedTransform
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
   //  void sendTransform(const StampedTransform & transform);
 
-  /** \brief Send a vector of StampedTransforms 
+  /** \brief Send a vector of StampedTransforms
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
   //void sendTransform(const std::vector<StampedTransform> & transforms);
 
@@ -71,8 +71,8 @@ public:
 
 private:
   /// Internal reference to ros::Node
-  rclcpp::node::Node::SharedPtr node_;
-  rclcpp::publisher::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr publisher_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr publisher_;
 
 };
 

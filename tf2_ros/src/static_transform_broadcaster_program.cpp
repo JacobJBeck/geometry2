@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   // TODO(clalancette): Anonymize the node name like it is in ROS1.
-  auto node = rclcpp::node::Node::make_shared("static_transform_publisher");
+  auto node = rclcpp::Node::make_shared("static_transform_publisher");
 
   tf2_ros::StaticTransformBroadcaster broadcaster(node);
   geometry_msgs::msg::TransformStamped msg;
@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
     msg.transform.rotation.y = atof(argv[5]);
     msg.transform.rotation.z = atof(argv[6]);
     msg.transform.rotation.w = atof(argv[7]);
-    msg.header.stamp = rclcpp::Time::now();
+    msg.header.stamp = node->now();
     msg.header.frame_id = argv[8];
     msg.child_frame_id = argv[9];
   }
@@ -96,7 +96,7 @@ int main(int argc, char ** argv)
     msg.transform.rotation.z = quat.z();
     msg.transform.rotation.w = quat.w();
 
-    msg.header.stamp = rclcpp::Time::now();
+    msg.header.stamp = node->now();
     msg.header.frame_id = argv[7];
     msg.child_frame_id = argv[8];
   }
