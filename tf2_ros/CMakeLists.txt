@@ -7,7 +7,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(NOT ANDROID)
-set(TF2_PY tf2_py)
+  set(TF2_PY tf2_py)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -15,23 +15,15 @@ find_package(ament_cmake REQUIRED)
 # find_package(actionlib REQUIRED)
 # find_package(actionlib_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(message_filters REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_msgs REQUIRED)
 
-find_package(rmw)
-
-# This is necessary due to console bridge installing to a non-standard location
-# https://github.com/ros2/ros2/issues/195
-if(UNIX AND NOT APPLE)
-  ament_environment_hooks(env_hook/console_bridge_libs.sh)
-endif()
-
 include_directories(include
   ${geometry_msgs_INCLUDE_DIRS}
+  ${message_filters_INCLUDE_DIRS}
   ${rclcpp_INCLUDE_DIRS}
-  ${rmw_INCLUDE_DIRS}
-  ${rmw_implementation_INCLUDE_DIRS}
   ${tf2_INCLUDE_DIRS}
   ${tf2_msgs_INCLUDE_DIRS}
   )
@@ -48,14 +40,14 @@ add_library(${PROJECT_NAME} SHARED
 
 target_link_libraries(${PROJECT_NAME}
   ${geometry_msgs_LIBRARIES}
+  ${message_filters_LIBRARIES}
   ${rclcpp_LIBRARIES}
-  ${rmw_LIBRARIES}
-  ${rmw_implementation_LIBRARIES}
   ${tf2_LIBRARIES}
   ${tf2_msgs_LIBRARIES}
   )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "TF2_ROS_BUILDING_DLL")
+
 # TODO(tfoote) port server client interfaces
 # # buffer_server executable
 # add_executable(buffer_server src/buffer_server_main.cpp)
@@ -75,8 +67,6 @@ target_link_libraries(static_transform_publisher
   ${PROJECT_NAME}
   ${geometry_msgs_LIBRARIES}
   ${rclcpp_LIBRARIES}
-  ${rmw_LIBRARIES}
-  ${rmw_implementation_LIBRARIES}
   ${tf2_LIBRARIES}
   ${tf2_msgs_LIBRARIES}
   )
@@ -88,8 +78,6 @@ target_link_libraries(tf2_echo
   ${PROJECT_NAME}
   ${geometry_msgs_LIBRARIES}
   ${rclcpp_LIBRARIES}
-  ${rmw_LIBRARIES}
-  ${rmw_implementation_LIBRARIES}
   ${tf2_LIBRARIES}
   ${tf2_msgs_LIBRARIES}
   )
@@ -101,8 +89,6 @@ target_link_libraries(tf2_echo
     ${PROJECT_NAME}
     ${geometry_msgs_LIBRARIES}
     ${rclcpp_LIBRARIES}
-    ${rmw_LIBRARIES}
-    ${rmw_implementation_LIBRARIES}
     ${tf2_LIBRARIES}
     ${tf2_msgs_LIBRARIES}
     )
@@ -110,13 +96,18 @@ target_link_libraries(tf2_echo
 # Install rules
 install(TARGETS
   ${PROJECT_NAME}
-  tf2_echo
-  tf2_monitor
-  # buffer_server
-  static_transform_publisher
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+# install executables
+install(TARGETS
+  # buffer_server
+  static_transform_publisher
+  tf2_echo
+  tf2_monitor
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
@@ -125,7 +116,16 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 
 # Tests
-# if(BUILD_TESTING)
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_buffer test/test_buffer.cpp)
+  target_link_libraries(test_buffer ${PROJECT_NAME})
+
+  # Adds a tf2_ros message_filter unittest that uses
+  # multiple target frames and a non-zero time tolerance
+  ament_add_gtest(${PROJECT_NAME}_test_message_filter test/message_filter_test.cpp)
+  target_link_libraries(${PROJECT_NAME}_test_message_filter ${PROJECT_NAME})
+
 # TODO(tfoote) port tests to use ROS2 instead of ROS1 api.
 if (false)
 
@@ -143,8 +143,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_msgs
   ${TF2_PY}
 )
-
-
 
 # tf2_ros_test_listener
 add_executable(${PROJECT_NAME}_test_listener EXCLUDE_FROM_ALL test/listener_unittest.cpp)
@@ -170,8 +168,11 @@ add_rostest(test/transform_listener_unittest.launch)
 add_rostest(test/transform_listener_time_reset_test.launch)
 
 endif()
+endif()
+
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(rclcpp)
 ament_export_dependencies(tf2_msgs)
+ament_export_dependencies(tf2)
 ament_package()

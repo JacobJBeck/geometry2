@@ -59,6 +59,7 @@ public:
   std::map<std::string, std::vector<double> > authority_map;
   std::map<std::string, std::vector<double> > authority_frequency_map;
 
+  rclcpp::Clock::SharedPtr clock_;
   tf2_ros::Buffer buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_;
 
@@ -69,7 +70,7 @@ public:
   {
     const tf2_msgs::msg::TFMessage& message = *(msg);
     //TODO(tfoote) recover authority info
-    std::string authority = "No authority availabil"; //msg_evt.getPublisherName(); // lookup the authority
+    std::string authority = "<no authority available>"; //msg_evt.getPublisherName(); // lookup the authority
 
     double average_offset = 0;
     std::unique_lock<std::mutex> my_lock(map_mutex_);
@@ -77,7 +78,7 @@ public:
     {
       frame_authority_map[message.transforms[i].child_frame_id] = authority;
 
-      double offset = tf2::timeToSec(tf2::get_now()) - tf2_ros::timeToSec(message.transforms[i].header.stamp);
+      double offset = clock_->now().seconds() - tf2_ros::timeToSec(message.transforms[i].header.stamp);
       average_offset  += offset;
 
       std::map<std::string, std::vector<double> >::iterator it = delay_map.find(message.transforms[i].child_frame_id);
@@ -113,22 +114,27 @@ public:
     std::map<std::string, std::vector<double> >::iterator it3 = authority_frequency_map.find(authority);
     if (it3 == authority_frequency_map.end())
     {
-      authority_frequency_map[authority] = std::vector<double>(1,tf2::timeToSec(tf2::get_now()));
+      authority_frequency_map[authority] = std::vector<double>(1, clock_->now().seconds());
     }
     else
     {
-      it3->second.push_back(tf2::timeToSec(tf2::get_now()));
+      it3->second.push_back(clock_->now().seconds());
       if (it3->second.size() > 1000)
         it3->second.erase(it3->second.begin());
     }
 
   };
 
-  TFMonitor(bool using_specific_chain, std::string framea  = "", std::string frameb = ""):
-    framea_(framea), frameb_(frameb),
-    using_specific_chain_(using_specific_chain)
+  TFMonitor(
+    rclcpp::Node::SharedPtr node, bool using_specific_chain,
+    std::string framea  = "", std::string frameb = "")
+      : node_(node),
+        clock_(node->get_clock()),
+        buffer_(clock_),
+        framea_(framea),
+        frameb_(frameb),
+        using_specific_chain_(using_specific_chain)
   {
-    node_ = rclcpp::Node::make_shared("tf_monitor");
     tf_ = std::make_shared<tf2_ros::TransformListener>(buffer_);
 
     if (using_specific_chain_)
@@ -158,9 +164,9 @@ public:
     custom_qos_profile.depth = 100;
 
     std::function<void(const tf2_msgs::msg::TFMessage::SharedPtr)> standard_callback = std::bind(&TFMonitor::callback, this, std::placeholders::_1);
-    subscriber_tf_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("tf", standard_callback, custom_qos_profile);
+    subscriber_tf_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("/tf", standard_callback, custom_qos_profile);
     std::function<void(const tf2_msgs::msg::TFMessage::SharedPtr)> static_callback = std::bind(&TFMonitor::callback, this, std::placeholders::_1);
-    subscriber_tf_message_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("tf_static", static_callback, custom_qos_profile);
+    subscriber_tf_message_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("/tf_static", static_callback, custom_qos_profile);
 
     // subscriber_tf_ = node_->create_subscriber.subscribe<tf::tfMessage>("tf", 100, boost::bind(&TFMonitor::callback, this, _1));
     // subscriber_tf_message_ = node_.subscribe<tf::tfMessage>("tf_message", 100, boost::bind(&TFMonitor::callback, this, _1));
@@ -178,7 +184,7 @@ public:
       max_delay = std::max(max_delay, it->second[i]);
     }
     average_delay /= it->second.size();
-    ss << "Frame: " << it->first <<" published by "<< frame_authority << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
+    ss << "Frame: " << it->first << ", published by "<< frame_authority << ", Average Delay: " << average_delay << ", Max Delay: " << max_delay << std::endl;
     return ss.str();
   }
 
@@ -199,7 +205,7 @@ public:
     if (using_specific_chain_)
     {
       auto tmp = buffer_.lookupTransform(framea_, frameb_, tf2::TimePointZero);
-      double diff = tf2::timeToSec(tf2::get_now()) - tf2_ros::timeToSec(tmp.header.stamp);
+      double diff = clock_->now().seconds() - tf2_ros::timeToSec(tmp.header.stamp);
       avg_diff = lowpass * diff + (1-lowpass)*avg_diff;
       if (diff > max_diff) max_diff = diff;
     }
@@ -271,7 +277,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   //TODO(tfoote) make anonymous
-  rclcpp::Node::SharedPtr nh = rclcpp::Node::make_shared("tf_monitor_main");
+  rclcpp::Node::SharedPtr nh = rclcpp::Node::make_shared("tf2_monitor_main");
 
 
   std::string framea, frameb;
@@ -283,7 +289,7 @@ int main(int argc, char ** argv)
   else if (argc == 1)
     using_specific_chain = false;
   else{
-    ROS_INFO("TF_Monitor: usage: tf_monitor framea frameb");
+    ROS_INFO("TF_Monitor: usage: tf2_monitor framea frameb");
     return -1;
   }
 
@@ -294,7 +300,7 @@ int main(int argc, char ** argv)
   // {
   //   if (++iterations > 10)
   //   {
-  //     ROS_INFO("tf_monitor waiting for time to be published");
+  //     ROS_INFO("tf2_monitor waiting for time to be published");
   //     iterations = 0;
   //   }
   //   ros::WallDuration(0.1).sleep();
@@ -307,8 +313,9 @@ int main(int argc, char ** argv)
   auto run_func = [](rclcpp::Node::SharedPtr node) {
     return rclcpp::spin(node);
   };
+  TFMonitor monitor(nh, using_specific_chain, framea, frameb);
   std::thread spinner(run_func, nh);
-  TFMonitor monitor(using_specific_chain, framea, frameb);
+
   monitor.spin();
   spinner.join();
   return 0;

@@ -81,9 +81,9 @@ void TransformListener::init()
   rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_default;
   custom_qos_profile.depth = 100;
   std::function<void(const tf2_msgs::msg::TFMessage::SharedPtr)> standard_callback = std::bind(&TransformListener::subscription_callback, this, std::placeholders::_1);
-  message_subscription_tf_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("tf", standard_callback, custom_qos_profile);
+  message_subscription_tf_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("/tf", standard_callback, custom_qos_profile);
   std::function<void(const tf2_msgs::msg::TFMessage::SharedPtr)> static_callback = std::bind(&TransformListener::static_subscription_callback, this, std::placeholders::_1);
-  message_subscription_tf_static_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("tf_static", static_callback, custom_qos_profile);
+  message_subscription_tf_static_ = node_->create_subscription<tf2_msgs::msg::TFMessage>("/tf_static", static_callback, custom_qos_profile);
 }
 
 void TransformListener::initThread()
@@ -114,15 +114,6 @@ void TransformListener::static_subscription_callback(const tf2_msgs::msg::TFMess
 
 void TransformListener::subscription_callback_impl(const tf2_msgs::msg::TFMessage::SharedPtr msg, bool is_static)
 {
-  auto now = tf2::get_now();
-  if(now < last_update_){
-    ROS_WARN("Detected jump back in time. Clearing TF buffer.");
-    buffer_.clear();
-  }
-  last_update_ = now;
-
-
-
   const tf2_msgs::msg::TFMessage& msg_in = *msg;
   //TODO(tfoote) find a way to get the authority
   std::string authority = "Authority undetectable"; //msg_evt.getPublisherName(); // lookup the authority
