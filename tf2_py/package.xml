@@ -5,7 +5,7 @@
   <version>0.9.1</version>
   <description>The tf2_py package</description>
 
-  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <maintainer email="tfoote@osrfoundation.org">Tully Foote</maintainer>
 
 
@@ -28,6 +28,8 @@
   <build_depend>tf2</build_depend>
   <build_depend>tf2_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>tf2</exec_depend>
